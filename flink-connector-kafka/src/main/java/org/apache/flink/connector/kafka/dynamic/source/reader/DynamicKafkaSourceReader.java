@@ -37,6 +37,7 @@ import org.apache.flink.connector.kafka.dynamic.source.metrics.KafkaClusterMetri
 import org.apache.flink.connector.kafka.dynamic.source.split.DynamicKafkaSourceSplit;
 import org.apache.flink.connector.kafka.source.KafkaPropertiesUtil;
 import org.apache.flink.connector.kafka.source.metrics.KafkaSourceReaderMetrics;
+import org.apache.flink.connector.kafka.source.reader.KafkaConsumerRecord;
 import org.apache.flink.connector.kafka.source.reader.KafkaRecordEmitter;
 import org.apache.flink.connector.kafka.source.reader.KafkaSourceReader;
 import org.apache.flink.connector.kafka.source.reader.deserializer.KafkaRecordDeserializationSchema;
@@ -50,7 +51,6 @@ import org.apache.flink.util.Preconditions;
 import org.apache.flink.util.UserCodeClassLoader;
 
 import com.google.common.collect.ArrayListMultimap;
-import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -410,8 +410,8 @@ public class DynamicKafkaSourceReader<T> implements SourceReader<T, DynamicKafka
     }
 
     private KafkaSourceReader<T> createReader(String kafkaClusterId) throws Exception {
-        FutureCompletingBlockingQueue<RecordsWithSplitIds<ConsumerRecord<byte[], byte[]>>>
-                elementsQueue = new FutureCompletingBlockingQueue<>();
+        FutureCompletingBlockingQueue<RecordsWithSplitIds<KafkaConsumerRecord>> elementsQueue =
+                new FutureCompletingBlockingQueue<>();
         Properties readerSpecificProperties = new Properties();
         KafkaPropertiesUtil.copyProperties(properties, readerSpecificProperties);
         KafkaPropertiesUtil.copyProperties(

@@ -256,7 +256,7 @@ public class KafkaPartitionSplitReaderTest {
                         Arrays.asList(normalSplit, emptySplit, emptySplitWithZeroStoppingOffset)));
 
         // Fetch and check empty splits is added to finished splits
-        RecordsWithSplitIds<ConsumerRecord<byte[], byte[]>> recordsWithSplitIds = reader.fetch();
+        RecordsWithSplitIds<KafkaConsumerRecord> recordsWithSplitIds = reader.fetch();
         assertThat(recordsWithSplitIds.finishedSplits()).contains(emptySplit.splitId());
         assertThat(recordsWithSplitIds.finishedSplits())
                 .contains(emptySplitWithZeroStoppingOffset.splitId());
@@ -362,12 +362,12 @@ public class KafkaPartitionSplitReaderTest {
         Map<String, Integer> numConsumedRecords = new HashMap<>();
         Set<String> finishedSplits = new HashSet<>();
         while (finishedSplits.size() < splits.size()) {
-            RecordsWithSplitIds<ConsumerRecord<byte[], byte[]>> recordsBySplitIds = reader.fetch();
+            RecordsWithSplitIds<KafkaConsumerRecord> recordsBySplitIds = reader.fetch();
             String splitId = recordsBySplitIds.nextSplit();
             while (splitId != null) {
                 // Collect the records in this split.
-                List<ConsumerRecord<byte[], byte[]>> splitFetch = new ArrayList<>();
-                ConsumerRecord<byte[], byte[]> record;
+                List<KafkaConsumerRecord> splitFetch = new ArrayList<>();
+                KafkaConsumerRecord record;
                 while ((record = recordsBySplitIds.nextRecordFromSplit()) != null) {
                     splitFetch.add(record);
                 }
@@ -449,17 +449,18 @@ public class KafkaPartitionSplitReaderTest {
     private boolean verifyConsumed(
             final KafkaPartitionSplit split,
             final long expectedStartingOffset,
-            final Collection<ConsumerRecord<byte[], byte[]>> consumed) {
+            final Collection<KafkaConsumerRecord> consumed) {
         long expectedOffset = expectedStartingOffset;
 
-        for (ConsumerRecord<byte[], byte[]> record : consumed) {
+        for (KafkaConsumerRecord record : consumed) {
             int expectedValue = (int) expectedOffset;
             long expectedTimestamp = expectedOffset * 1000L;
 
-            assertThat(deserializer.deserialize(record.topic(), record.value()))
+            ConsumerRecord<byte[], byte[]> consumerRecord = record.getConsumerRecord();
+            assertThat(deserializer.deserialize(consumerRecord.topic(), consumerRecord.value()))
                     .isEqualTo(expectedValue);
-            assertThat(record.offset()).isEqualTo(expectedOffset);
-            assertThat(record.timestamp()).isEqualTo(expectedTimestamp);
+            assertThat(consumerRecord.offset()).isEqualTo(expectedOffset);
+            assertThat(consumerRecord.timestamp()).isEqualTo(expectedTimestamp);
 
             expectedOffset++;
         }

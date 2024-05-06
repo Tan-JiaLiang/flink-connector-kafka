@@ -32,7 +32,6 @@ import org.apache.flink.connector.kafka.source.reader.fetcher.KafkaSourceFetcher
 import org.apache.flink.connector.kafka.source.split.KafkaPartitionSplit;
 import org.apache.flink.connector.kafka.source.split.KafkaPartitionSplitState;
 
-import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
 import org.slf4j.Logger;
@@ -51,7 +50,7 @@ import java.util.concurrent.ConcurrentMap;
 @Internal
 public class KafkaSourceReader<T>
         extends SingleThreadMultiplexSourceReaderBase<
-                ConsumerRecord<byte[], byte[]>, T, KafkaPartitionSplit, KafkaPartitionSplitState> {
+                KafkaConsumerRecord, T, KafkaPartitionSplit, KafkaPartitionSplitState> {
     private static final Logger LOG = LoggerFactory.getLogger(KafkaSourceReader.class);
     // These maps need to be concurrent because it will be accessed by both the main thread
     // and the split fetcher thread in the callback.
@@ -61,11 +60,9 @@ public class KafkaSourceReader<T>
     private final boolean commitOffsetsOnCheckpoint;
 
     public KafkaSourceReader(
-            FutureCompletingBlockingQueue<RecordsWithSplitIds<ConsumerRecord<byte[], byte[]>>>
-                    elementsQueue,
+            FutureCompletingBlockingQueue<RecordsWithSplitIds<KafkaConsumerRecord>> elementsQueue,
             KafkaSourceFetcherManager kafkaSourceFetcherManager,
-            RecordEmitter<ConsumerRecord<byte[], byte[]>, T, KafkaPartitionSplitState>
-                    recordEmitter,
+            RecordEmitter<KafkaConsumerRecord, T, KafkaPartitionSplitState> recordEmitter,
             Configuration config,
             SourceReaderContext context,
             KafkaSourceReaderMetrics kafkaSourceReaderMetrics) {

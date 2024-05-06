@@ -27,10 +27,10 @@ import org.apache.flink.connector.base.source.reader.fetcher.SplitFetcher;
 import org.apache.flink.connector.base.source.reader.fetcher.SplitFetcherTask;
 import org.apache.flink.connector.base.source.reader.splitreader.SplitReader;
 import org.apache.flink.connector.base.source.reader.synchronization.FutureCompletingBlockingQueue;
+import org.apache.flink.connector.kafka.source.reader.KafkaConsumerRecord;
 import org.apache.flink.connector.kafka.source.reader.KafkaPartitionSplitReader;
 import org.apache.flink.connector.kafka.source.split.KafkaPartitionSplit;
 
-import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.clients.consumer.OffsetCommitCallback;
 import org.apache.kafka.common.TopicPartition;
@@ -50,7 +50,7 @@ import java.util.function.Supplier;
  */
 @Internal
 public class KafkaSourceFetcherManager
-        extends SingleThreadFetcherManager<ConsumerRecord<byte[], byte[]>, KafkaPartitionSplit> {
+        extends SingleThreadFetcherManager<KafkaConsumerRecord, KafkaPartitionSplit> {
     private static final Logger LOG = LoggerFactory.getLogger(KafkaSourceFetcherManager.class);
 
     /**
@@ -64,10 +64,8 @@ public class KafkaSourceFetcherManager
      * @param splitFinishedHook Hook for handling finished splits in split fetchers.
      */
     public KafkaSourceFetcherManager(
-            FutureCompletingBlockingQueue<RecordsWithSplitIds<ConsumerRecord<byte[], byte[]>>>
-                    elementsQueue,
-            Supplier<SplitReader<ConsumerRecord<byte[], byte[]>, KafkaPartitionSplit>>
-                    splitReaderSupplier,
+            FutureCompletingBlockingQueue<RecordsWithSplitIds<KafkaConsumerRecord>> elementsQueue,
+            Supplier<SplitReader<KafkaConsumerRecord, KafkaPartitionSplit>> splitReaderSupplier,
             Consumer<Collection<String>> splitFinishedHook) {
         super(elementsQueue, splitReaderSupplier, new Configuration(), splitFinishedHook);
     }
@@ -78,8 +76,7 @@ public class KafkaSourceFetcherManager
         if (offsetsToCommit.isEmpty()) {
             return;
         }
-        SplitFetcher<ConsumerRecord<byte[], byte[]>, KafkaPartitionSplit> splitFetcher =
-                fetchers.get(0);
+        SplitFetcher<KafkaConsumerRecord, KafkaPartitionSplit> splitFetcher = fetchers.get(0);
         if (splitFetcher != null) {
             // The fetcher thread is still running. This should be the majority of the cases.
             enqueueOffsetsCommitTask(splitFetcher, offsetsToCommit, callback);
@@ -91,7 +88,7 @@ public class KafkaSourceFetcherManager
     }
 
     private void enqueueOffsetsCommitTask(
-            SplitFetcher<ConsumerRecord<byte[], byte[]>, KafkaPartitionSplit> splitFetcher,
+            SplitFetcher<KafkaConsumerRecord, KafkaPartitionSplit> splitFetcher,
             Map<TopicPartition, OffsetAndMetadata> offsetsToCommit,
             OffsetCommitCallback callback) {
         KafkaPartitionSplitReader kafkaReader =

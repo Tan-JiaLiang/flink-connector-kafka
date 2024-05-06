@@ -22,9 +22,8 @@ import org.apache.flink.annotation.Internal;
 import org.apache.flink.api.connector.source.SourceReaderContext;
 import org.apache.flink.connector.base.source.reader.RecordsWithSplitIds;
 import org.apache.flink.connector.kafka.source.metrics.KafkaSourceReaderMetrics;
+import org.apache.flink.connector.kafka.source.reader.KafkaConsumerRecord;
 import org.apache.flink.connector.kafka.source.reader.KafkaPartitionSplitReader;
-
-import org.apache.kafka.clients.consumer.ConsumerRecord;
 
 import javax.annotation.Nullable;
 
@@ -49,19 +48,18 @@ public class KafkaPartitionSplitReaderWrapper extends KafkaPartitionSplitReader
     }
 
     @Override
-    public RecordsWithSplitIds<ConsumerRecord<byte[], byte[]>> fetch() throws IOException {
+    public RecordsWithSplitIds<KafkaConsumerRecord> fetch() throws IOException {
         return new WrappedRecordsWithSplitIds(super.fetch(), kafkaClusterId);
     }
 
     private static final class WrappedRecordsWithSplitIds
-            implements RecordsWithSplitIds<ConsumerRecord<byte[], byte[]>> {
+            implements RecordsWithSplitIds<KafkaConsumerRecord> {
 
-        private final RecordsWithSplitIds<ConsumerRecord<byte[], byte[]>> delegate;
+        private final RecordsWithSplitIds<KafkaConsumerRecord> delegate;
         private final String kafkaClusterId;
 
         public WrappedRecordsWithSplitIds(
-                RecordsWithSplitIds<ConsumerRecord<byte[], byte[]>> delegate,
-                String kafkaClusterId) {
+                RecordsWithSplitIds<KafkaConsumerRecord> delegate, String kafkaClusterId) {
             this.delegate = delegate;
             this.kafkaClusterId = kafkaClusterId;
         }
@@ -79,7 +77,7 @@ public class KafkaPartitionSplitReaderWrapper extends KafkaPartitionSplitReader
 
         @Nullable
         @Override
-        public ConsumerRecord<byte[], byte[]> nextRecordFromSplit() {
+        public KafkaConsumerRecord nextRecordFromSplit() {
             return delegate.nextRecordFromSplit();
         }
 

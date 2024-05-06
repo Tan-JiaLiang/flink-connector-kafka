@@ -32,7 +32,7 @@ import java.io.IOException;
 /** The {@link RecordEmitter} implementation for {@link KafkaSourceReader}. */
 @Internal
 public class KafkaRecordEmitter<T>
-        implements RecordEmitter<ConsumerRecord<byte[], byte[]>, T, KafkaPartitionSplitState> {
+        implements RecordEmitter<KafkaConsumerRecord, T, KafkaPartitionSplitState> {
 
     private final KafkaRecordDeserializationSchema<T> deserializationSchema;
     private final SourceOutputWrapper<T> sourceOutputWrapper = new SourceOutputWrapper<>();
@@ -43,13 +43,15 @@ public class KafkaRecordEmitter<T>
 
     @Override
     public void emitRecord(
-            ConsumerRecord<byte[], byte[]> consumerRecord,
-            SourceOutput<T> output,
-            KafkaPartitionSplitState splitState)
+            KafkaConsumerRecord record, SourceOutput<T> output, KafkaPartitionSplitState splitState)
             throws Exception {
         try {
+            ConsumerRecord<byte[], byte[]> consumerRecord = record.getConsumerRecord();
+            long fetchTime = record.getFetchTime();
+
             sourceOutputWrapper.setSourceOutput(output);
             sourceOutputWrapper.setTimestamp(consumerRecord.timestamp());
+            sourceOutputWrapper.setFetchTime(fetchTime);
             deserializationSchema.deserialize(consumerRecord, sourceOutputWrapper);
             splitState.setCurrentOffset(consumerRecord.offset() + 1);
         } catch (Exception e) {
@@ -61,9 +63,11 @@ public class KafkaRecordEmitter<T>
 
         private SourceOutput<T> sourceOutput;
         private long timestamp;
+        private long fetchTime;
 
         @Override
         public void collect(T record) {
+            // todo: use sourceOutput.collect(record, timestamp, fetchTime);
             sourceOutput.collect(record, timestamp);
         }
 
@@ -76,6 +80,10 @@ public class KafkaRecordEmitter<T>
 
         private void setTimestamp(long timestamp) {
             this.timestamp = timestamp;
+        }
+
+        private void setFetchTime(long fetchTime) {
+            this.fetchTime = fetchTime;
         }
     }
 }

@@ -39,6 +39,7 @@ import org.apache.flink.connector.kafka.source.enumerator.KafkaSourceEnumerator;
 import org.apache.flink.connector.kafka.source.enumerator.initializer.OffsetsInitializer;
 import org.apache.flink.connector.kafka.source.enumerator.subscriber.KafkaSubscriber;
 import org.apache.flink.connector.kafka.source.metrics.KafkaSourceReaderMetrics;
+import org.apache.flink.connector.kafka.source.reader.KafkaConsumerRecord;
 import org.apache.flink.connector.kafka.source.reader.KafkaPartitionSplitReader;
 import org.apache.flink.connector.kafka.source.reader.KafkaRecordEmitter;
 import org.apache.flink.connector.kafka.source.reader.KafkaSourceReader;
@@ -50,8 +51,6 @@ import org.apache.flink.core.io.SimpleVersionedSerializer;
 import org.apache.flink.metrics.MetricGroup;
 import org.apache.flink.util.UserCodeClassLoader;
 import org.apache.flink.util.function.SerializableSupplier;
-
-import org.apache.kafka.clients.consumer.ConsumerRecord;
 
 import javax.annotation.Nullable;
 
@@ -145,8 +144,8 @@ public class KafkaSource<OUT>
     SourceReader<OUT, KafkaPartitionSplit> createReader(
             SourceReaderContext readerContext, Consumer<Collection<String>> splitFinishedHook)
             throws Exception {
-        FutureCompletingBlockingQueue<RecordsWithSplitIds<ConsumerRecord<byte[], byte[]>>>
-                elementsQueue = new FutureCompletingBlockingQueue<>();
+        FutureCompletingBlockingQueue<RecordsWithSplitIds<KafkaConsumerRecord>> elementsQueue =
+                new FutureCompletingBlockingQueue<>();
         deserializationSchema.open(
                 new DeserializationSchema.InitializationContext() {
                     @Override
